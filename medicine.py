@@ -1,22 +1,21 @@
 from bs4 import BeautifulSoup
-import urllib
 import requests
-from urllib import request
 import xlwt
+from openpyxl import *
 
 def outToExcel(datas):
-    workbook=xlwt.Workbook()
-    sheet=workbook.add_sheet('sheet1',cell_overwrite_ok=True)
-    sheet.write(0,0,'商品名称')
-    sheet.write(0,1,'通用名称')
-    sheet.write(0,2,'生产企业')
-    sheet.write(0,3, '批准文号')
-    sheet.write(0, 4, '适应症')
-    sheet.write(0, 5, '剂型')
-    sheet.write(0, 6, '规格')
-    sheet.write(0, 7, '用法用量')
-    sheet.write(0, 8, '不良反应')
-    sheet.write(0, 9, '有效期')
+    wb=Workbook()
+    ws=wb.create_sheet('sheet1')
+    ws.cell(row=1,column=1,value='商品名称')
+    ws.cell(row=1,column=2,value='通用名称')
+    ws.cell(row=1,column=3,value='生产企业')
+    ws.cell(row=1,column=4, value='批准文号')
+    ws.cell(row=1, column=5, value='适应症')
+    ws.cell(row=1, column=6, value='剂型')
+    ws.cell(row=1, column=7, value='规格')
+    ws.cell(row=1, column=8, value='用法用量')
+    ws.cell(row=1, column=9, value='不良反应')
+    ws.cell(row=1, column=10, value='有效期')
     propMap={
         'name':0,
         'gname':1,
@@ -29,17 +28,16 @@ def outToExcel(datas):
         'effect':8,
         'period':9
     }
-    row=1
+    row=2
     for data in datas:
         keys=data.keys()
         for key in keys:
-            print(key,type(key))
-            sheet.write(row,propMap[key],data[key])
+            ws.cell(row=row,column=propMap[key]+1,value=data[key])
         row+=1
-    workbook.save('Medicine.xls')
+        print(data['name'])
+    wb.save('meddddd.xlsx')
 
 def getInfo(url):
-    print(url)
     data={}
     wb_data = requests.get(url)
     soup = BeautifulSoup(wb_data.text, 'lxml')
@@ -74,17 +72,17 @@ def run(url):
     datas=[]
     for med in medicines:
         datas.append(getInfo('http://www.360kad.com'+med.get('href')))
+
     return datas
 
 def pa():
-    numberOfPage=0
-    url = 'http://www.360kad.com/Category_842/Index.aspx'
+    url = 'http://www.360kad.com/Spzt/www_yjjc.shtml'
     wb_data=requests.get(url)
     soup = BeautifulSoup(wb_data.text, 'lxml')
-    index=soup.select('body > div.Ywrap > div.Yright > div > div > span > span.end > select > option')
-    print(len(index))
+    index=soup.select('body > div.Ywrap > div.pager > span > span.end > a.Ylast')
+    index=str(index[0].get('href'))
     datas=[]
-    for i in range(1,len(index)+1):
+    for i in range(1,int(index[index.find('?page')+6:None])):
         datas.extend(run(url+'?page='+str(i)))
     return datas
 
