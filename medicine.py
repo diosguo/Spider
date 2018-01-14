@@ -34,7 +34,7 @@ def outToExcel(datas):
         for key in keys:
             ws.cell(row=row,column=propMap[key]+1,value=data[key])
         row+=1
-        print(data['name'])
+
     wb.save('meddddd.xlsx')
 
 def getInfo(url):
@@ -66,24 +66,47 @@ def getInfo(url):
     return data
 
 def run(url):
+    print('in run:'+str(url))
     wb_data=requests.get(url)
     soup=BeautifulSoup(wb_data.text,'lxml')
-    medicines=soup.select('#YproductList a.name')
+    medicines=soup.select('ul.Productlist p.pic > a')
     datas=[]
     for med in medicines:
-        datas.append(getInfo('http://www.360kad.com'+med.get('href')))
-
+        href=med.get('href')
+        datas.append(getInfo(href[:href.find('?')]))
     return datas
 
+def page(url):
+    datas=[]
+    datas.extend(run(url))
+    while(True):
+        print('in page:'+str(url))
+        wb_data=requests.get(url)
+        soup=BeautifulSoup(wb_data.text,'lxml')
+        nextpage = soup.select('a.Ynext')
+        print('next page;'+str(nextpage))
+        if str(nextpage).find('disable') > 0:
+            return datas
+        else:
+            try:
+                url='http://search.360kad.com'+nextpage[0].get('href')
+            except IndexError:
+                return datas
+            datas.extend(run(url))
+    return datas
 def pa():
-    url = 'http://www.360kad.com/Spzt/www_yjjc.shtml'
+    url = 'http://www.360kad.com'
     wb_data=requests.get(url)
     soup = BeautifulSoup(wb_data.text, 'lxml')
-    index=soup.select('body > div.Ywrap > div.pager > span > span.end > a.Ylast')
-    index=str(index[0].get('href'))
+    index=soup.select('#lNav_lists > li:nth-of-type(1) > div.lNav_pop > dl > dt > a')
+    lenofindex=len(index)
     datas=[]
-    for i in range(1,int(index[index.find('?page')+6:None])):
-        datas.extend(run(url+'?page='+str(i)))
+    for j in range(lenofindex):
+        href = str(index[j].get('href'))
+        print('in pa:'+str(href))
+        datas.extend(page(href))
+        print(len(datas))
+        print(datas)
     return datas
 
 if __name__ =='__main__':
